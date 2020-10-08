@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using viewer.Hubs;
 using viewer.Models;
+using System.Security.Claims;
 
 namespace viewer.Controllers
 {
@@ -61,6 +62,20 @@ namespace viewer.Controllers
         [HttpPost]
         public async Task<IActionResult> Post()
         {
+            Claim roleClaim = ClaimsPrincipal.Current.FindFirst("roles");
+            if (roleClaim == null || !roleClaim.Value.Split(' ').Contains("AzureEventGridSecureWebhook"))
+            {
+                /*
+                throw new HttpResponseException(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.Unauthorized,
+                    ReasonPhrase = $"The 'roles' claim does not contain 'AzureEventGridSecureWebhook' or was not found"
+                });
+                */
+
+                return Unauthorized("The 'roles' claim does not contain 'AzureEventGridSecureWebhook' or was not found");
+            }
+
             using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
             {
                 var jsonContent = await reader.ReadToEndAsync();
